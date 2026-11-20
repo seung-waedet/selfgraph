@@ -851,6 +851,7 @@ async function choiceErrors(graph: SelfGraph): Promise<Record<string, object | s
     list_limit_zero: await errorOf(() => graph.entities.list({ limit: 0 })),
     list_limit_text: await errorOf(() => graph.entities.list({ limit: "5" } as never)),
     entity_missing_near: await errorOf(() => graph.entities.delete("person:jane-do")),
+    rel_certify_surrogate_by: await errorOf(() => graph.relations.certify(worksAt, { by: "a\ud83dlonely" })),
   };
 }
 

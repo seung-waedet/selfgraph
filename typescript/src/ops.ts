@@ -3286,9 +3286,7 @@ export async function certifyRelation(
   at: Date,
 ): Promise<Relation> {
   requireStr("relation id", rid);
-  if (by !== null && (typeof by !== "string" || !pyStrip(by))) {
-    throw new ValidationError("certified_by must be a non-empty string");
-  }
+  if (by !== null) requireStr("by", by, "by");
   let edge = await runner.getCurrentEdge(ns, rid);
   if (edge !== null) {
     await runner.lockNode(ns, L_ENTITY, edge.from_id);

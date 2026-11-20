@@ -35,7 +35,7 @@ from selfgraph.runtime import (
 from selfgraph.stores import cypher
 from selfgraph.stores._cypher import bolt_auth, bolt_driver, bolt_error, parse_auth, query_error
 from selfgraph.stores.cypher import CypherStore
-from selfgraph.stores.hydradb import HydraDBStore
+from selfgraph.stores.hydradb import _MAX_WRITE_BYTES, HydraDBStore, _guard_sizes, _write_size
 from selfgraph.stores.kuzu import _kuzu_error
 
 
@@ -589,3 +589,10 @@ def test_run_cypher_results_drop_internal_node_properties():
         "n": {"id": "t:a", "tags": [1]},
         "rows": [{"id": "t:a", "tags": [1]}],
     }
+
+
+def test_hydradb_size_check_counts_a_lone_surrogate_instead_of_raising():
+    assert _write_size({"by": "a\ud83d"}) == len("by") + len("a") + 3
+    with pytest.raises(StoreError) as err:
+        _guard_sizes({"by": "\ud83d" * (_MAX_WRITE_BYTES // 3 + 1)})
+    assert err.value.code == "write_too_large"

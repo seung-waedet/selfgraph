@@ -58,7 +58,10 @@ def _write_size(row: Mapping[str, Any]) -> int:
     @param row (Mapping[str, Any]): the column names and values about to be written.
     @return (int): the size in bytes.
     """
-    return sum(len(key.encode()) + (len(value.encode()) if isinstance(value, str) else 9) for key, value in row.items())
+    return sum(
+        len(key.encode()) + (len(value.encode(errors="surrogatepass")) if isinstance(value, str) else 9)
+        for key, value in row.items()
+    )
 
 
 def _guard_sizes(row: Mapping[str, Any]) -> None:

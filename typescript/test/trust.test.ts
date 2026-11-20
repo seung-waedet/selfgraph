@@ -293,8 +293,21 @@ function suite(spec: StoreSpec): void {
       newer.event_time,
     ]);
     expect((await g.relations.list({ from_entity: "person:ann" })).items.map((r) => r.id)).toEqual([newer.id]);
-    await expect(g.relations.certify(old.id, { by: " " })).rejects.toThrow("certified_by must be a non-empty string");
+    await expect(g.relations.certify(old.id, { by: " " })).rejects.toThrow("by cannot be empty");
     await expect(g.relations.certify("relation:missing", { by: "hr" })).rejects.toThrow("does not exist");
+  });
+
+  it("rejects a certifier with a control or surrogate character", async () => {
+    const g = await employment({ contradiction: "supersede" });
+    const rel = (await g.insert.facts({ relations: [worksAt("person:ann", "company:acme", 2024)] })).relations[0]!;
+    for (const by of ["a\ud83dlonely", "a\u0000b"]) {
+      await expect(g.relations.certify(rel.id, { by })).rejects.toMatchObject({
+        message: "by cannot contain control or surrogate characters",
+        code: "invalid_argument",
+        field: "by",
+      });
+    }
+    expect((await g.relations.get(rel.id))!.certified_by).toBeNull();
   });
 
   it("refuses to certify a retired relation", async () => {

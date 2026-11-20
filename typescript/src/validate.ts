@@ -119,11 +119,14 @@ export function requireCleanJson(name: string, value: unknown, depth = 0, safeIn
  *
  * @param label (string): the field name for the error message.
  * @param value (unknown): the value to check.
+ * @param field (string | undefined): the argument the error names as at fault, when one is.
  */
-export function requireStr(label: string, value: unknown): asserts value is string {
-  if (typeof value !== "string") throw new ValidationError(`${label} must be a string, got ${typeName(value)}`);
-  if (!pyStrip(value)) throw new ValidationError(`${label} cannot be empty`);
-  requireNoControl(label, value);
+export function requireStr(label: string, value: unknown, field?: string): asserts value is string {
+  if (typeof value !== "string") {
+    throw new ValidationError(`${label} must be a string, got ${typeName(value)}`, { field });
+  }
+  if (!pyStrip(value)) throw new ValidationError(`${label} cannot be empty`, { field });
+  requireNoControl(label, value, field);
 }
 
 /**
@@ -141,9 +144,12 @@ export function requireNamespace(value: unknown): asserts value is string {
  *
  * @param label (string): the field name for the error message.
  * @param value (string): the text to check.
+ * @param field (string | undefined): the argument the error names as at fault, when one is.
  */
-export function requireNoControl(label: string, value: string): void {
-  if (hasControl(value)) throw new ValidationError(`${label} cannot contain control or surrogate characters`);
+export function requireNoControl(label: string, value: string, field?: string): void {
+  if (hasControl(value)) {
+    throw new ValidationError(`${label} cannot contain control or surrogate characters`, { field });
+  }
 }
 
 /**

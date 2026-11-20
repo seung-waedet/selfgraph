@@ -228,10 +228,20 @@ def test_certified_relations_survive_supersede_and_lead_retrieval():
     newer = result.relations[0]
     assert (bumped.is_current, bumped.invalidated_by, bumped.invalidated_at) == (False, newer.id, newer.event_time)
     assert [r.id for r in run(g.relations.list(from_entity="person:ann")).items] == [newer.id]
-    with pytest.raises(ValidationError, match="certified_by must be a non-empty string"):
+    with pytest.raises(ValidationError, match="by cannot be empty"):
         run(g.relations.certify(old.id, by=" "))
     with pytest.raises(NotFoundError):
         run(g.relations.certify("relation:missing", by="hr"))
+
+
+def test_certify_rejects_a_certifier_with_a_control_or_surrogate_character():
+    g = employment_graph("cert-by", contradiction="supersede")
+    rel = run(g.insert.facts({"relations": [works_at("acme", 2024)]})).relations[0]
+    for by in ("a\ud83dlonely", "a\x00b"):
+        with pytest.raises(ValidationError, match="by cannot contain control or surrogate characters") as err:
+            run(g.relations.certify(rel.id, by=by))
+        assert (err.value.code, err.value.field) == ("invalid_argument", "by")
+    assert run(g.relations.get(rel.id)).certified_by is None
 
 
 def test_certify_rejects_a_retired_relation():
